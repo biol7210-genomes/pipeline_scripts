@@ -24,7 +24,7 @@ for ($i = 0; $i < @infiles; $i += 2){
 	my $r1b = basename($r1);
 	my $r2b = basename($r2);
 	print "Trimming: $r1b and $r2b\n";
-	system(`trim_galore --illumina --clip_R1 10 --clip_R2 5 --length 100 --paired $r1  $r2 -o $outDir 2>./trim_galore.log`);
+	system(`trim_galore --illumina --clip_R1 10 --clip_R2 10 --three_prime_clip_R1 5 --three_prime_clip_R2 5 --no_report_file  --length 100 --paired $r1  $r2 -o $outDir 2>./trim_galore.log`);
 }
 
 exit 0;
