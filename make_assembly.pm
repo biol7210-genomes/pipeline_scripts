@@ -11,7 +11,7 @@ for ($i = 0; $i < @infiles; $i += 2){
 	system(`mkdir -p $outDir/$out`);
 	my $r1 = join('_',$base,"R1_001_val_1.fq.gz");
 	my $r2 = join('_',$base,"R2_001_val_2.fq.gz");
-	system(`VelvetOptimiser.pl -d $outDir/$out/ -s 43 -e 127 -x 25 -f '-fastq.gz -shortPaired -separate $r1 $r2' -t 2 --optFuncKmer 'n50'`);
+	system(`$method`);
 }
 
 }
