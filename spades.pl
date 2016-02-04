@@ -18,9 +18,9 @@ die print_usage() unless ((defined $outDir) && (defined $inDir));
 my @infiles = glob ( "$inDir/*.fastq.gz" );
 for ($i = 0; $i < @infiles; $i += 2){
 	$base = $infiles[$i];
-	$base  =~ s/\_R._001\.fastq\.gz//g;
-	my $r1 = join('_',$base,"R1_001.fastq.gz");
-	my $r2 = join('_',$base,"R2_001.fastq.gz");
+	$base  =~ s/\_R1_001_val_1\.fq\.gz//g;
+	my $r1 = join('_',$base,"R1_001_val_1.fq.gz");
+	my $r2 = join('_',$base,"R2_001_val_2.fq.gz");
 	system(`spades.py -1 $r1 -2 $r2 -o $outDir -k 21,33,55,77,99,127 --careful`);
 	print "$r1\t$r2\n";
 }
