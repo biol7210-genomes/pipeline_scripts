@@ -40,7 +40,7 @@ DESCRIPTION
 
 OPTIONS
   -in	dir		Directory with FASTQ
-  -out  dir		outpur files
+  -out  dir		output files
 
 EXAMPLES
   $prog -in ../reads/ ./spades_out
