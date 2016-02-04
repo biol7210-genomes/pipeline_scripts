@@ -15,13 +15,16 @@ if (@ARGV < 1){print_usage();exit 1;}
 my($inDir,$outDir,$i,$base);
 GetOptions ('o=s' => \$outDir, 'in=s' => \$inDir);
 die print_usage() unless ((defined $outDir) && (defined $inDir));
-my @infiles = glob ( "$inDir/*.fastq.gz" );
+my @infiles = glob ( "$inDir/*.fq.gz" );
 for ($i = 0; $i < @infiles; $i += 2){
 	$base = $infiles[$i];
 	$base  =~ s/\_R1_001_val_1\.fq\.gz//g;
+	my $out = $base;
+	$out =~ m/^M\d*/;
+	print "$out\n";
 	my $r1 = join('_',$base,"R1_001_val_1.fq.gz");
 	my $r2 = join('_',$base,"R2_001_val_2.fq.gz");
-	system(`spades.py -1 $r1 -2 $r2 -o $outDir -k 21,33,55,77,99,127 --careful`);
+	#system(`spades.py -1 $r1 -2 $r2 -o $outDir -k 21,33,55,77,99,127 --careful`);
 	print "$r1\t$r2\n";
 }
 
