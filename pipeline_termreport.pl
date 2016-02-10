@@ -16,7 +16,7 @@ GetOptions ('o=s' => \$outDir, 'in=s' => \$inDir);
 die print_usage() unless ((defined $outDir) && (defined $inDir));
 my @infiles = glob ( "$inDir/*.fq.gz" );
 my $max = @infiles/2;
-my $amax = $max * 3;
+my $amax = $max * 4;
 initialize_bar();
 $assemblyStatus->start;
 $currentStatus -> start;
@@ -30,7 +30,7 @@ for ($i = 0; $i < @infiles; $i += 2){
 	$assemblyStatus->update();
         $currentStatus->update();
 }
-update_bar();
+update_bar("Velvet progress:","1");
 for ($i = 0; $i < @infiles; $i += 2){
 	$currentStatus -> label("Velvet progress: ");
 	get_files($infiles[$i]);
@@ -40,6 +40,18 @@ for ($i = 0; $i < @infiles; $i += 2){
 	sleep 1;
 	$assemblyStatus->update();
        	$currentStatus->update();	
+}
+update_bar("ABySS progress:","2");
+for ($i = 0; $i < @infiles; $i += 2){
+	for my $num ("97","115"){
+        get_files($infiles[$i]);
+#		system(`mkdir -p $outDir/velvet/k$num`);
+#		system("abyss-pe -C k$num k=$num name=$out in="$r1 $r2" j=4");
+       		$currentStatus->subText("Running ABySS on $out with k of $num");
+       		sleep 1;
+       		$assemblyStatus->update();
+     		$currentStatus->update();
+	}
 }
 
 exit 0;
@@ -51,6 +63,8 @@ my $currentReport = Term::Report->new(
    numFormat => 1,
    statusBar => [
       scale => 50,
+      label => "SPAdes progress:",
+      showTime => 1,
       startRow => 4,
       subText => 'Running...',
       subTextAlign => 'center'
@@ -71,17 +85,21 @@ $assemblyStatus = $assemblyReport->{statusBar};
 $assemblyStatus->setItems($amax);
 $currentStatus = $currentReport->{statusBar};
 $currentStatus->setItems($max);
-$currentStatus->label("SPAdes progress: ");
+$currentStatus->label("SPAdes progress:");
 }
 sub update_bar(){
-$currentStatus->reset({
-        start=>0,
-        setItems => $max,
-});
+	my $label = shift; 
+	my $multiplier = shift;
+	my $realmax = $max * $multiplier;
+	$currentStatus->reset({
+        	start=>0,
+        	setItems => $realmax,
+		label => $label,
+	});
 }
 sub get_files(){
         $base = shift;
-        $base  =~ s/\_R1_001_val_1\.fq\.gz//g;
+	$base  =~ s/\_R1_001_val_1\.fq\.gz//g;
         ($out) = $base =~ m/(M\d*)/;
         $r1 = join('_',$base,"R1_001_val_1.fq.gz");
         $r2 = join('_',$base,"R2_001_val_2.fq.gz");
