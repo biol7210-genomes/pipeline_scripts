@@ -25,7 +25,7 @@ for ($i = 0; $i < @infiles; $i += 2){
 	get_files($infiles[$i]);
 #	system(`mkdir -p $outDir/spades/$out`);
 	$currentStatus->subText("Running SPAdes on $out");
-#	system(`spades.py -h -1 $r1 -2 $r2 -o $outDir/$out -k 99,115,127 --careful 2>$outDir/$out/spades.log`);
+#	system(`spades.py -h -1 $r1 -2 $r2 -o $outDir/spades/$out -k 99,115,127 --careful 2>$outDir/$out/spades.log`);
 	sleep 1;
 	$assemblyStatus->update();
         $currentStatus->update();
@@ -34,8 +34,8 @@ update_bar("Velvet progress:","1");
 for ($i = 0; $i < @infiles; $i += 2){
 	$currentStatus -> label("Velvet progress: ");
 	get_files($infiles[$i]);
-#	system(`mkdir -p $outDir/velvet/$out`);
-#	system(`VelvetOptimiser.pl -d $outDir/$out/ -s 97 -e 127 -x 10 -f '-fastq.gz -shortPaired -separate $r1 $r2' -t 2 --optFuncKmer 'n50'`);
+#	system(`mkdir -p $outDir/velvet/`);
+#	system(`VelvetOptimiser.pl -d $outDir/velvet/$out/ -s 97 -e 127 -x 10 -f '-fastq.gz -shortPaired -separate $r1 $r2' -t 2 --optFuncKmer 'n50'`);
 	$currentStatus->subText("Running Velvet on $out");
 	sleep 1;
 	$assemblyStatus->update();
@@ -45,8 +45,8 @@ update_bar("ABySS progress:","2");
 for ($i = 0; $i < @infiles; $i += 2){
 	for my $num ("97","115"){
         get_files($infiles[$i]);
-#		system(`mkdir -p $outDir/velvet/k$num`);
-#		system("abyss-pe -C k$num k=$num name=$out in="$r1 $r2" j=4");
+#		system(`mkdir -p $outDir/abyss/k$num`);
+#		system("abyss-pe -C $outDir/abyss/k$num k=$num name=$out in="$r1 $r2" j=4");
        		$currentStatus->subText("Running ABySS on $out with k of $num");
        		sleep 1;
        		$assemblyStatus->update();
@@ -88,8 +88,7 @@ $currentStatus->setItems($max);
 $currentStatus->label("SPAdes progress:");
 }
 sub update_bar(){
-	my $label = shift; 
-	my $multiplier = shift;
+	my ($label,$multiplier) = @_;
 	my $realmax = $max * $multiplier;
 	$currentStatus->reset({
         	start=>0,
@@ -104,3 +103,4 @@ sub get_files(){
         $r1 = join('_',$base,"R1_001_val_1.fq.gz");
         $r2 = join('_',$base,"R2_001_val_2.fq.gz");
 }
+
