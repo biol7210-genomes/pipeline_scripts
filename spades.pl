@@ -8,21 +8,26 @@ use strict;
 use Getopt::Long;
 use File::Basename;
 use File::Temp;
-use Parallel::ForkManager;
 use Pod::Usage;
+use Term::ProgressBar;
 my $prog = basename($0);
 if (@ARGV < 1){print_usage();exit 1;}
-my($inDir,$outDir,$i,$base);
+my($inDir,$outDir,$i,$base,$out);
 GetOptions ('o=s' => \$outDir, 'in=s' => \$inDir);
 die print_usage() unless ((defined $outDir) && (defined $inDir));
-my @infiles = glob ( "$inDir/*.fastq.gz" );
+my @infiles = glob ( "$inDir/*.fq.gz" );
+my $max =  @infiles;
+my $spades_progress = Term::ProgressBar->new ({count => $max, name => 'SPAdes progress', term_width => '80', ETA   => 'linear',});
 for ($i = 0; $i < @infiles; $i += 2){
 	$base = $infiles[$i];
-	$base  =~ s/\_R._001\.fastq\.gz//g;
-	my $r1 = join('_',$base,"R1_001.fastq.gz");
-	my $r2 = join('_',$base,"R2_001.fastq.gz");
-	system(`spades.py -1 $r1 -2 $r2 -o $outDir -k 21,33,55,77,99,127 --careful`);
-	print "$r1\t$r2\n";
+	$base  =~ s/\_R1_001_val_1\.fq\.gz//g;
+	($out) = $base =~ m/(M\d*)/;
+	system(`mkdir -p $outDir/$out`);
+	my $r1 = join('_',$base,"R1_001_val_1.fq.gz");
+	my $r2 = join('_',$base,"R2_001_val_2.fq.gz");
+	system("spades.py -1 $r1 -2 $r2 -o $outDir/$out -k 97,115,127 --careful 2>$outDir/$out/spades.log");
+        $spades_progress->update($i+1);
+	sleep 1;
 }
 
 exit 0;
@@ -51,9 +56,3 @@ EXIT STATUS
 EOF
 }
 
-sub temp_filename{
-	    my $file = File::Temp->new(
-	        TEMPLATE => 'tempXXXXX',
-	        DIR      => '/tmp/',
-	    );
-	}
