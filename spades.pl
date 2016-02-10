@@ -13,12 +13,14 @@ use Term::ProgressBar;
 my $prog = basename($0);
 if (@ARGV < 1){print_usage();exit 1;}
 my($inDir,$outDir,$i,$base,$out);
+my $j=0;
 GetOptions ('o=s' => \$outDir, 'in=s' => \$inDir);
 die print_usage() unless ((defined $outDir) && (defined $inDir));
 my @infiles = glob ( "$inDir/*.fq.gz" );
-my $max =  @infiles;
+my $max =  @infiles/2;
 my $spades_progress = Term::ProgressBar->new ({count => $max, name => 'SPAdes progress', term_width => '80', ETA   => 'linear',});
 for ($i = 0; $i < @infiles; $i += 2){
+	$j++;
 	$base = $infiles[$i];
 	$base  =~ s/\_R1_001_val_1\.fq\.gz//g;
 	($out) = $base =~ m/(M\d*)/;
@@ -26,7 +28,7 @@ for ($i = 0; $i < @infiles; $i += 2){
 	my $r1 = join('_',$base,"R1_001_val_1.fq.gz");
 	my $r2 = join('_',$base,"R2_001_val_2.fq.gz");
 	system("spades.py -1 $r1 -2 $r2 -o $outDir/$out -k 97,115,127 --careful 2>$outDir/$out/spades.log");
-        $spades_progress->update($i+1);
+        $spades_progress->update($j);
 	sleep 1;
 }
 
