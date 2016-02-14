@@ -1,16 +1,14 @@
 #!/usr/bin/perl
 # Aroon Chande
-# SPAdes assembly pipeling
-# Input is directory containing trimmed fq and outdir
-# Takes gunzip'ed or uncompressed fastq files
-# ./spades.pl -in fqdir -o outdir
+# BIOL-7210 -- Comp Genomics 2016 
+# Genome Assembly pipeline
 use strict;
-use Getopt::Long;
+use Async;
 use File::Basename;
 use File::Temp;
+use Getopt::Long;
 use Pod::Usage;
 use Term::Report;
-use Async;
 my $prog = basename($0);
 if (@ARGV < 1){print_usage();exit 1;}
 my($help,$inDir,$outDir,$i,$base,$out,$assemblyStatus,$currentStatus,$r1,$r2,$R,$ref,@steps,$link,$quast);
@@ -105,6 +103,7 @@ if (grep(/smalt/i, @steps)){
 		system(`bcftools view -O v $outDir/smalt/$out/assembly.bcf 2>>$outDir/status.log| vcfutils.pl vcf2fq > $outDir/smalt/$out/assembly.fq 2>>$outDir/status.log`);
 		$link = join(".","smalt",$out,"fa");
 		system(`seqret -sequence $outDir/smalt/$out/assembly.fq -outseq $outDir/smalt/$out/$link && cp $outDir/smalt/$out/$link $outDir/contigs/$link`);
+		system(`rm $outDir/smalt/$out/map.sam $outDir/smalt/$out/map.bam`);
 		$currentStatus->update();
 		$assemblyStatus->update();
 	}
