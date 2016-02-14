@@ -13,9 +13,10 @@ use Term::Report;
 use Async;
 my $prog = basename($0);
 if (@ARGV < 1){print_usage();exit 1;}
-my($inDir,$outDir,$i,$base,$out,$assemblyStatus,$currentStatus,$r1,$r2,$R,$ref,@steps,$link,$quast);
-GetOptions ('o=s' => \$outDir, 'in=s' => \$inDir, 'R=s' => \$ref, 'steps=s{1,}' => \@steps);
+my($help,$inDir,$outDir,$i,$base,$out,$assemblyStatus,$currentStatus,$r1,$r2,$R,$ref,@steps,$link,$quast);
+GetOptions ('h' => \$help, 'o=s' => \$outDir, 'in=s' => \$inDir, 'R=s' => \$ref, 'steps=s{1,}' => \@steps);
 if (grep(/,/, @steps)){@steps = split(/,/,join(',',@steps));}
+die print_usage() if (defined $help);
 die print_usage() unless ((defined $outDir) && (defined $inDir));
 # Multiplier for main progress bar
 my $stepMult = scalar @steps;
@@ -83,6 +84,34 @@ if (grep(/abyss/i, @steps)){
 	}
 	$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/abyss* -o $outDir/quast/abyss &>/dev/null`)} or die);
 }
+# Smalt
+if (grep(/smalt/i, @steps)){
+	update_bar("SMALT progress:","3");
+	system(`mkdir -p $outDir/smalt/ && cp $ref $outDir/smalt/reference.fna &>$outDir/status.log`);
+	system(`smalt index -k 13 $outDir/smalt/reference  $outDir/smalt/reference.fna &>>$outDir/status.log `);
+	foreach (@infiles){
+		get_files($_);
+		system(`mkdir -p $outDir/smalt/$out`);
+		$currentStatus->subText("Mapping $out");
+		system(`smalt map -F fastq -f sam -i 1000 -n 6 -o $outDir/smalt/$out/map.sam $outDir/smalt/reference $r1 $r2 &>>$outDir/status.log `);
+		$currentStatus->update();
+		$currentStatus->subText("Converting and sorting $out");
+		system(`samtools view -bS $outDir/smalt/$out/map.sam > $outDir/smalt/$out/map.bam`);
+		system(`samtools sort -o $outDir/smalt/$out/sorted.bam $outDir/smalt/$out/map.bam 2>>$outDir/status.log`);
+		system(`samtools index $outDir/smalt/$out/sorted.bam $outDir/smalt/sorted.index`);
+		$currentStatus->update();
+		$currentStatus->subText("Extracting assembled reads for $out");
+		system(`samtools mpileup -f $outDir/smalt/reference.fna -gu $outDir/smalt/$out/sorted.bam 2>>$outDir/status.log | bcftools call -c -O b -o $outDir/smalt/$out/assembly.bcf 2>>$outDir/status.log`);
+		system(`bcftools view -O v $outDir/smalt/$out/assembly.bcf | vcfutils.pl vcf2fq > $outDir/smalt/$out/assembly.fq 2>>$outDir/status.log`);
+		$link = join(".","smalt",$out,"fa");
+		system(`seqret -sequence $outDir/smalt/$out/assembly.fq -outseq $outDir/smalt/$out/$link && cp $outDir/smalt/$out/$link $outDir/contigs/$link`);
+		$currentStatus->update();
+		$assemblyStatus->update();
+	}
+	$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/smalt* --scaffolds -o $outDir/quast/smalt >/dev/null`)} or die);
+}
+
+
 print "\n\n\n\n\nWaiting on QUAST\n\n";
 while (1){
 	if ($quast->ready){
@@ -91,7 +120,7 @@ while (1){
 		open REPORT, ">$report" or die "Cannot open $report: $!";
 		print REPORT "Assembly\n# contigs (>= 0 bp)\n# contigs (>= 1000 bp)\n# contigs (>= 5000 bp)\n# contigs (>= 10000 bp)\n# contigs (>= 25000 bp)\n# contigs (>= 50000 bp)\nTotal length (>= 0 bp)\nTotal length (>= 1000 bp)\nTotal length (>= 5000 bp)\nTotal length (>= 10000 bp)\nTotal length (>= 25000 bp)\nTotal length (>= 50000 bp)\n# contigs\nLargest contig\nTotal length\nReference length\nGC (%)\nReference GC (%)\nN50\nNG50\nN75\nNG75\nL50\nLG50\nL75\nLG75\n# misassemblies\n# misassembled contigs\nMisassembled contigs length\n# local misassemblies\n# unaligned contigs\nUnaligned length\nGenome fraction (%)\nDuplication ratio\n# Ns per 100 kbp\n# mismatches per 100 kbp\n# indels per 100 kbp\nLargest alignment\nNA50\nNGA50\nNA75\nNGA75\nLA50\nLGA50\nLA75\nLGA75";
 		close REPORT;
-		system(`paste $report $outDir/quast/*/report.tsv| cut -f 1,3,5,7 > $outDir/quast/final_report.tsv`);
+		system(`paste $report $outDir/quast/*/report.tsv| cut -f 1,3,5,7,9,11,13,15,17 > $outDir/quast/final_report.tsv`);
 		print "Assembly quality scores can be found at: $outDir/quast/final_report.tsv\n";
 		exit 0;
 	}
@@ -109,8 +138,8 @@ sub initialize_bar(){
    		statusBar => [
 			scale => 50,
 			label => "SPAdes progress:",
-			# Hope that any given step completed in linear time compared to others from same assembler
-			showTime => 1,
+			# Disabled for now
+			#showTime => 1,
 			startRow => 4,
 			subText => 'Running...',
 			subTextAlign => 'center'
