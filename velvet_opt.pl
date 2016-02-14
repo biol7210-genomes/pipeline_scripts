@@ -18,11 +18,7 @@ for ($i = 0; $i < @infiles; $i += 2){
 	$base = $infiles[$i];
 	$base  =~ s/\_R1_001_val_1\.fq\.gz//g;
 	($out) = $base =~ m/(M\d*)/;
-<<<<<<< HEAD
-# can't mkdir if velvet	system(`mkdir -p $outDir/$out`);
-=======
 #	system(`mkdir -p $outDir/$out`);
->>>>>>> refs/remotes/biol7210-genomes/aroon
 	my $r1 = join('_',$base,"R1_001_val_1.fq.gz");
 	my $r2 = join('_',$base,"R2_001_val_2.fq.gz");
 	system(`VelvetOptimiser.pl -d $outDir/$out/ -s 43 -e 127 -x 25 -f '-fastq.gz -shortPaired -separate $r1 $r2' -t 2 --optFuncKmer 'n50'`);
