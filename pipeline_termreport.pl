@@ -91,7 +91,7 @@ if (grep(/smalt/i, @steps)){
 		get_files($_);
 		system(`mkdir -p $outDir/smalt/$out`);
 		$currentStatus->subText("Mapping $out");
-#		system(`smalt map -F fastq -f sam -i 1000 -n 6 -o $outDir/smalt/$out/map.sam $outDir/smalt/reference $r1 $r2 &>>$outDir/status.log `);
+		system(`smalt map -F fastq -f sam -i 1000 -n 6 -o $outDir/smalt/$out/map.sam $outDir/smalt/reference $r1 $r2 &>>$outDir/status.log `);
 		$currentStatus->update();
 		$currentStatus->subText("Converting and sorting $out");
 		system(`sambamba view -t 6 -f bam -S $outDir/smalt/$out/map.sam --output-filename $outDir/smalt/$out/map.bam &>>$outDir/status.log`);
@@ -99,7 +99,7 @@ if (grep(/smalt/i, @steps)){
 		system(`sambamba index -t 6 $outDir/smalt/$out/sorted.bam $outDir/smalt/sorted.index &>>$outDir/status.log`);
 		$currentStatus->update();
 		$currentStatus->subText("Extracting assembled reads for $out");
-		system(`sambamba-pileup -t 6 $outDir/smalt/$out/sorted.bam --output-filename $outDir/smalt/$out/assembly.bcf --samtools -f $outDir/smalt/reference.fna -gu  --bcftools call -c -O b  &>>$outDir/status.log`);
+		system(`sambamba mpileup -t 6 $outDir/smalt/$out/sorted.bam --output-filename $outDir/smalt/$out/assembly.bcf --samtools -f $outDir/smalt/reference.fna -gu  --bcftools call -c -O b  &>>$outDir/status.log`);
 		system(`bcftools view -O v $outDir/smalt/$out/assembly.bcf 2>>$outDir/status.log| vcfutils.pl vcf2fq > $outDir/smalt/$out/assembly.fq 2>>$outDir/status.log`);
 		$link = join(".","smalt",$out,"fa");
 		system(`seqret -sequence $outDir/smalt/$out/assembly.fq -outseq $outDir/smalt/$out/$link && cp $outDir/smalt/$out/$link $outDir/contigs/$link`);
