@@ -111,20 +111,6 @@ if (grep(/smalt/i, @steps)){
 }
 
 
-print "\n\n\n\n\nWaiting on QUAST\n\n";
-while (1){
-	if ($quast->ready){
-		#combine reports
-		my $report=temp_filename();
-		open REPORT, ">$report" or die "Cannot open $report: $!";
-		print REPORT "Assembly\n# contigs (>= 0 bp)\n# contigs (>= 1000 bp)\n# contigs (>= 5000 bp)\n# contigs (>= 10000 bp)\n# contigs (>= 25000 bp)\n# contigs (>= 50000 bp)\nTotal length (>= 0 bp)\nTotal length (>= 1000 bp)\nTotal length (>= 5000 bp)\nTotal length (>= 10000 bp)\nTotal length (>= 25000 bp)\nTotal length (>= 50000 bp)\n# contigs\nLargest contig\nTotal length\nReference length\nGC (%)\nReference GC (%)\nN50\nNG50\nN75\nNG75\nL50\nLG50\nL75\nLG75\n# misassemblies\n# misassembled contigs\nMisassembled contigs length\n# local misassemblies\n# unaligned contigs\nUnaligned length\nGenome fraction (%)\nDuplication ratio\n# Ns per 100 kbp\n# mismatches per 100 kbp\n# indels per 100 kbp\nLargest alignment\nNA50\nNGA50\nNA75\nNGA75\nLA50\nLGA50\nLA75\nLGA75";
-		close REPORT;
-		system(`paste $report $outDir/quast/*/report.tsv| cut -f 1,3,5,7,9,11,13,15,17 > $outDir/quast/final_report.tsv`);
-		print "Assembly quality scores can be found at: $outDir/quast/final_report.tsv\n";
-#		exit 0;
-	}
-	sleep 1;
-}
 if (grep(/meta/i, @steps)){
 	update_bar("metassembler progress:","1");
 	system(`mkdir -p $outDir/meta/ 2>$outDir/status.log`);
@@ -140,6 +126,22 @@ if (grep(/meta/i, @steps)){
 	system("metassemble --conf $outDir/$out/$confFile --outd $outDir/$out 2>>$outDir/status.log");
 	system("cp $outDir/meta/$out/Metassembly/QVelvet.Abyss.Spades/M1/QVelvet.Abyss.Spades.fasta $outDir/contigs/$meta");
 	}
+	$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/meta* -o $outDir/quast/meta >/dev/null`)} or die);
+}
+
+print "\n\n\n\n\nWaiting on QUAST\n\n";
+while (1){
+	if ($quast->ready){
+		#combine reports
+		my $report=temp_filename();
+		open REPORT, ">$report" or die "Cannot open $report: $!";
+		print REPORT "Assembly\n# contigs (>= 0 bp)\n# contigs (>= 1000 bp)\n# contigs (>= 5000 bp)\n# contigs (>= 10000 bp)\n# contigs (>= 25000 bp)\n# contigs (>= 50000 bp)\nTotal length (>= 0 bp)\nTotal length (>= 1000 bp)\nTotal length (>= 5000 bp)\nTotal length (>= 10000 bp)\nTotal length (>= 25000 bp)\nTotal length (>= 50000 bp)\n# contigs\nLargest contig\nTotal length\nReference length\nGC (%)\nReference GC (%)\nN50\nNG50\nN75\nNG75\nL50\nLG50\nL75\nLG75\n# misassemblies\n# misassembled contigs\nMisassembled contigs length\n# local misassemblies\n# unaligned contigs\nUnaligned length\nGenome fraction (%)\nDuplication ratio\n# Ns per 100 kbp\n# mismatches per 100 kbp\n# indels per 100 kbp\nLargest alignment\nNA50\nNGA50\nNA75\nNGA75\nLA50\nLGA50\nLA75\nLGA75";
+		close REPORT;
+		system(`paste $report $outDir/quast/*/report.tsv| cut -f 1,3,5,7,9,11,13,15,17 > $outDir/quast/final_report.tsv`);
+		print "Assembly quality scores can be found at: $outDir/quast/final_report.tsv\n";
+#		exit 0;
+	}
+	sleep 1;
 }
 exit 0;
 
