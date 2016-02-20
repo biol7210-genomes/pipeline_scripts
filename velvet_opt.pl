@@ -1,35 +1,27 @@
 #!/usr/bin/perl -w
 # Aroon Chande
-# SPAdes assembly pipeling
-# Input is directory containing trimmed fq and outdir
-# Takes gunzip'ed or uncompressed fastq files
-# ./spades.pl -in fqdir -o outdir
+# Velvet assembly pipeling using Veletoptimiser.pl
+# Input is directory containing trimmed fq.gz and outdir
 use strict;
 use Getopt::Long;
 use File::Basename;
 use File::Temp;
+use Parallel::ForkManager;
 use Pod::Usage;
-use Term::ProgressBar;
 my $prog = basename($0);
 if (@ARGV < 1){print_usage();exit 1;}
 my($inDir,$outDir,$i,$base,$out);
-my $j=0;
 GetOptions ('o=s' => \$outDir, 'in=s' => \$inDir);
 die print_usage() unless ((defined $outDir) && (defined $inDir));
 my @infiles = glob ( "$inDir/*.fq.gz" );
-my $max =  @infiles/2;
-my $spades_progress = Term::ProgressBar->new ({count => $max, name => 'SPAdes progress', term_width => '80', ETA   => 'linear',});
 for ($i = 0; $i < @infiles; $i += 2){
-	$j++;
 	$base = $infiles[$i];
 	$base  =~ s/\_R1_001_val_1\.fq\.gz//g;
 	($out) = $base =~ m/(M\d*)/;
-	system(`mkdir -p $outDir/$out`);
+#	system(`mkdir -p $outDir/$out`);
 	my $r1 = join('_',$base,"R1_001_val_1.fq.gz");
 	my $r2 = join('_',$base,"R2_001_val_2.fq.gz");
-	system("spades.py -1 $r1 -2 $r2 -o $outDir/$out -k 97,115,127 --careful 2>$outDir/$out/spades.log");
-        $spades_progress->update($j);
-	sleep 1;
+	system(`VelvetOptimiser.pl -d $outDir/$out/ -s 43 -e 127 -x 25 -f '-fastq.gz -shortPaired -separate $r1 $r2' -t 2 --optFuncKmer 'n50'`);
 }
 
 exit 0;
@@ -45,10 +37,10 @@ DESCRIPTION
 
 OPTIONS
   -in	dir		Directory with FASTQ
-  -out  dir		outpur files
+  -out  dir		output files
 
 EXAMPLES
-  $prog -in ../reads/ ./spades_out
+  $prog -in ../reads/ ./velvet/
   $prog -h
 
 EXIT STATUS
@@ -57,4 +49,3 @@ EXIT STATUS
 
 EOF
 }
-
