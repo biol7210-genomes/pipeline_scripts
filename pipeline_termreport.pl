@@ -11,8 +11,8 @@ use Pod::Usage;
 use Term::Report;
 my $prog = basename($0);
 if (@ARGV < 1){print_usage();exit 1;}
-my($help,$inDir,$outDir,$i,$base,$out,$assemblyStatus,$currentStatus,$r1,$r2,$R,$ref,@steps,$link,$quast);
-GetOptions ('h' => \$help, 'o=s' => \$outDir, 'in=s' => \$inDir, 'R=s' => \$ref, 'steps=s{1,}' => \@steps);
+my($help,$inDir,$outDir,$i,$base,$out,$assemblyStatus,$currentStatus,$r1,$r2,$R,$ref,@steps,$link,$quast,$contigs);
+GetOptions ('h' => \$help, 'o=s' => \$outDir, 'in=s' => \$inDir, 'R=s' => \$ref, 'steps=s{1,}' => \@steps, 'contigs=s' => \$contigs);
 if (grep(/,/, @steps)){@steps = split(/,/,join(',',@steps));}
 die print_usage() if (defined $help);
 die print_usage() unless ((defined $outDir) && (defined $inDir));
@@ -103,7 +103,7 @@ if (grep(/smalt/i, @steps)){
 		system(`bcftools view -O v $outDir/smalt/$out/assembly.bcf 2>>$outDir/status.log| vcfutils.pl vcf2fq > $outDir/smalt/$out/assembly.fq 2>>$outDir/status.log`);
 		$link = join(".","smalt",$out,"fa");
 		system(`seqret -sequence $outDir/smalt/$out/assembly.fq -outseq $outDir/smalt/$out/$link && cp $outDir/smalt/$out/$link $outDir/contigs/$link`);
-		system(`rm $outDir/smalt/$out/map.sam $outDir/smalt/$out/map.bam`);
+		system(`rm $outDir/smalt/$out/map.sam $outDir/smalt/$out/map.bam &>/dev/null`);
 		$currentStatus->update();
 		$assemblyStatus->update();
 	}
@@ -121,11 +121,26 @@ while (1){
 		close REPORT;
 		system(`paste $report $outDir/quast/*/report.tsv| cut -f 1,3,5,7,9,11,13,15,17 > $outDir/quast/final_report.tsv`);
 		print "Assembly quality scores can be found at: $outDir/quast/final_report.tsv\n";
-		exit 0;
+#		exit 0;
 	}
 	sleep 1;
 }
-
+if (grep(/meta/i, @steps)){
+	update_bar("metassembler progress:","1");
+	system(`mkdir -p $outDir/meta/ 2>$outDir/status.log`);
+	foreach (@infiles){
+	my $confFile =join(".",$out,"config");
+	open OUT, ">$outDir/$out/$confFile" or die;
+	my $spades = join('.',"spades",$out,"fa");
+	my $velvet = join('.',"velvet",$out,"fa");
+	my $abyss = join('.',"abyss","115",$out,"fa");
+	my $meta = join(".","meta",$out,"fa");
+	print OUT "[global]\nbowtie2_threads=12\nbowtie2_read1=$r1\nbowtie2_read2=$r2\nbowtie2_maxins=3000\nbowtie2_minins=1000\ngenomeLength=1825000\nmateAn_A=1300\nmateAn_B=2300\n[1]\nfasta=$contigs/$spades\nID=Spades\n[2]\nfasta=$contigs/$abyss\nID=Abyss\n[3]\nfasta=$contigs/$velvet\nID=Velvet\n";
+	close OUT;
+	system("metassemble --conf $outDir/$out/$confFile --outd $outDir/$out 2>>$outDir/status.log");
+	system("cp $outDir/meta/$out/Metassembly/QVelvet.Abyss.Spades/M1/QVelvet.Abyss.Spades.fasta $outDir/contigs/$meta");
+	}
+}
 exit 0;
 
 #######
