@@ -43,7 +43,6 @@ if (grep(/spades/i, @steps)){
 	$assemblyStatus->update();
 	$currentStatus->update();
 }
-	$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/spades* -o $outDir/quast/spades >/dev/null`)} or die);
 }
 # Velvet
 
@@ -61,7 +60,6 @@ if (grep(/velvet/i, @steps)){
 	$assemblyStatus->update();
 	$currentStatus->update();	
 }
-	$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/velvet* -o $outDir/quast/velvet >/dev/null`)} or die);
 }
 # ABySS
 if (grep(/abyss/i, @steps)){
@@ -80,7 +78,6 @@ if (grep(/abyss/i, @steps)){
 			$assemblyStatus->update();
 		}
 	}
-	$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/abyss* -o $outDir/quast/abyss &>/dev/null`)} or die);
 }
 # Smalt
 if (grep(/smalt/i, @steps)){
@@ -107,7 +104,6 @@ if (grep(/smalt/i, @steps)){
 		$currentStatus->update();
 		$assemblyStatus->update();
 	}
-	$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/smalt* --scaffolds -o $outDir/quast/smalt >/dev/null`)} or die);
 }
 
 
@@ -126,9 +122,15 @@ if (grep(/meta/i, @steps)){
 	system("metassemble --conf $outDir/$out/$confFile --outd $outDir/$out 2>>$outDir/status.log");
 	system("cp $outDir/meta/$out/Metassembly/QVelvet.Abyss.Spades/M1/QVelvet.Abyss.Spades.fasta $outDir/contigs/$meta");
 	}
-	$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/meta* -o $outDir/quast/meta >/dev/null`)} or die);
 }
 
+##if (grep(/quast/i, @steps)){
+##	if (grep(/velvet/i, @steps)){$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/velvet* -o $outDir/quast/velvet >/dev/null`)} or die);}
+##	if (grep(/spades/i, @steps)){$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/spades* -o $outDir/quast/spades >/dev/null`)} or die);}
+##	if (grep(/abyss/i, @steps)){$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/abyss* -o $outDir/quast/abyss &>/dev/null`)} or die);}
+##	if (grep(/smalt/i, @steps)){$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/smalt* --scaffolds -o $outDir/quast/smalt >/dev/null`)} or die);}
+##	if (grep(/meta/i, @steps)){$quast =  Async->new( sub {system(`quast -R $ref --threads=2 $outDir/contigs/meta* -o $outDir/quast/meta >/dev/null`)} or die);}
+##
 print "\n\n\n\n\nWaiting on QUAST\n\n";
 while (1){
 	if ($quast->ready){
@@ -143,6 +145,8 @@ while (1){
 	}
 	sleep 1;
 }
+}
+
 exit 0;
 
 #######
