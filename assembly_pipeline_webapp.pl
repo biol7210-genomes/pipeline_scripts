@@ -4,11 +4,9 @@
 # Genome Assembly pipeline, for use in webapp
 use strict;
 use Async;
-use File::Basename;
+use File::Path qw(make_path remove_tree);
 use File::Temp;
 use Getopt::Long;
-my $prog = basename($0);
-if (@ARGV < 1){print_usage();exit 1;}
 my($inDir,$outDir,$i,$base,$out,$r1,$r2,@steps,$link,$quast,$contigs);
 $inDir = "/data/public/reads/";
 $outDir = "/data/public/assemblies/";
@@ -87,7 +85,8 @@ while (1){
 		print REPORT "Assembly\n# contigs (>= 0 bp)\n# contigs (>= 1000 bp)\n# contigs (>= 5000 bp)\n# contigs (>= 10000 bp)\n# contigs (>= 25000 bp)\n# contigs (>= 50000 bp)\nTotal length (>= 0 bp)\nTotal length (>= 1000 bp)\nTotal length (>= 5000 bp)\nTotal length (>= 10000 bp)\nTotal length (>= 25000 bp)\nTotal length (>= 50000 bp)\n# contigs\nLargest contig\nTotal length\nReference length\nGC (%)\nReference GC (%)\nN50\nNG50\nN75\nNG75\nL50\nLG50\nL75\nLG75\n# misassemblies\n# misassembled contigs\nMisassembled contigs length\n# local misassemblies\n# unaligned contigs\nUnaligned length\nGenome fraction (%)\nDuplication ratio\n# Ns per 100 kbp\n# mismatches per 100 kbp\n# indels per 100 kbp\nLargest alignment\nNA50\nNGA50\nNA75\nNGA75\nLA50\nLGA50\nLA75\nLGA75";
 		close REPORT;
 		system(`paste $report $tmpDir/quast/*/report.tsv| cut -f 1,3,5,7,9,11,13,15,17 > $tmpDir/quast/final_report.tsv`);
-		system("rm -rf $tmpDir/quast/spades $tmpDir/quast/velvet $tmpDir/quast/meta $tmpDir/quast/abyss $tmpDir/quast/meta &>/dev/null");
+		remove_tree ("$tmpDir/quast/spades","$tmpDir/quast/velvet","$tmpDir/quast/meta","$tmpDir/quast/abyss","$tmpDir/quast/meta");
+		unlink @infiles;
 		exit 0;
 	}
 	sleep 1;
